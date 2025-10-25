@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Text → Word (single page)</title>
+  <style>
+::-webkit-scrollbar {
+  width: 12px;           
+  height: 12px;         
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);  
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #0366d6;
+  border-radius: 6px;
+  border: 3px solid var(--bg-color); 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #0254a3;
+}
+
+* {
+  scrollbar-width: thin;           
+  scrollbar-color: #0366d6 var(--bg-color);
+}
+
+    :root {
+      --bg-color: #fafafa;
+      --text-color: #111;
+      --input-bg: #fff;
+      --input-border: #ddd;
+      --button-bg: #0366d6;
+      --button-color: #fff;
+      --button-secondary-bg: #6c757d;
+      --table-bg: #fff;
+      --table-header-bg: #f9fafb;
+      --table-row-alt-bg: #f9fafb;
+      --code-bg: #f5f5f5;
+      --code-border: #ddd;
+    }
+
+    body {
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      max-width:900px;
+      margin:32px auto;
+      padding:20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: all 0.3s;
+    }
+
+    h1{font-size:1.3rem;margin-bottom:6px}
+    label{display:block;margin-top:12px}
+    input[type=text],textarea{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid var(--input-border);
+      font-size:1rem;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      transition: all 0.3s;
+    }
+    textarea{min-height:260px;resize:vertical}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button{
+      padding:10px 14px;
+      border-radius:8px;
+      border:0;
+      background: var(--button-bg);
+      color: var(--button-color);
+      cursor:pointer;
+      transition: all 0.3s;
+    }
+    button.secondary{background: var(--button-secondary-bg)}
+
+    body {
+      --bg-color: #121212;
+      --text-color: #e0e0e0;
+      --input-bg: #1e1e1e;
+      --input-border: #333;
+      --button-bg: #1f6feb;
+      --button-color: #fff;
+      --button-secondary-bg: #444;
+      --table-bg: #1e1e1e;
+      --table-header-bg: #2c2c2c;
+      --table-row-alt-bg: #222;
+      --code-bg: #2c2c2c;
+      --code-border: #444;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px #e5e7eb;
+      background: var(--table-bg);
+      transition: all 0.3s;
+    }
+
+    thead {background: var(--table-header-bg);}
+    th, td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+    }
+    tbody tr:nth-child(even) {background: var(--table-row-alt-bg);}
+    #code_space {background: var(--code-bg); border: 1px solid var(--code-border);}
+  </style>
+</head>
+<body>
+  <label for="title">Document title</label>
+  <input id="title" type="text" placeholder="My Document" />
+
+  <label for="content">Text content</label>
+  <textarea id="content" placeholder="Type or paste text here..."></textarea>
+
+  <div class="controls">
+    <button id="download">Download Word</button>
+    <button id="preview" class="secondary">Open Preview</button>
+    <button id="clear" class="secondary">Clear</button>
+  </div>
+
+  <script>
+    const titleEl = document.getElementById('title');
+    const contentEl = document.getElementById('content');
+    const downloadBtn = document.getElementById('download');
+    const previewBtn = document.getElementById('preview');
+    const clearBtn = document.getElementById('clear');
+    
+    function escapeHtml(str){
+      if(!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    }
+
+function makeHtmlDocument(title, bodyHtml){
+    return `<!DOCTYPE html>
+<html dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<style>
+#code_name {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 3px;
+}
+#code_space {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 10px 0;
+    direction: ltr;
+}
+
+#code_space h3 {
+    color: #333;
+    margin: 0 0 10px 0;
+    font-family: monospace;
+}
+
+#code_space pre {
+    background: white;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: monospace;
+    border: 1px solid #ccc;
+}
+
+#code_space p {
+    background: transparent;
+    padding: 0;
+    margin: 2px 0;
+    font-size: 14px;
+    border: none;
+    line-height: 1.2;
+}
+body {
+  font-family: system-ui, sans-serif;
+  background: #fafafa; /* Light mode background */
+  color: #111;          /* Light mode text color */
+  padding: 2rem;
+  line-height: 1.7;
+  transition: all 0.3s;
+}
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px #e5e7eb;
+      background: white;
+    }
+
+    thead {
+      background: #f9fafb;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+    }
+
+    th {
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    h3 {
+    margin-top: 2rem;
+    color: #ffffff;
+    font-size: 1rem;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 2rem 0;
+    }
+</style>
+</head>
+<body>
+<h1>${escapeHtml(title)}</h1>
+${bodyHtml}
+</body>
+</html>`;
+}
+
+
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/#/g, "&#35;")
+        .replace(/_/g, "&#95;")
+        .replace(/\*/g, "&#42;")
+        .replace(/~/g, "&#126;")
+        .replace(/`/g, "&#096;");
+}
+
+function mdTableToHTML(md) {
+  md = md.replace(/^\| *[-:]+(\s*\|[-:]+)*\s*\|?$/gm, '');
+
+  const lines = md.trim().split(/\r?\n/);
+  if (lines.length === 0) return '';
+
+
+  const rows = lines.map(line => {
+    return line
+      .replace(/^\s*\|\s*|\s*\|\s*$/g, '')
+      .split('|')
+      .map(c => c.trim());
+  });
+
+  const headers = rows.shift();
+
+  let html = '<table border="1" style="border-collapse: collapse; margin: 10px 0;">\n';
+
+  html += '  <tr>\n';
+  headers.forEach(h => html += `    <th>${h}</th>\n`);
+
+  html += '  </tr>\n';
+
+  skip = 1
+  rows.forEach(r => {
+    if (skip > 1){
+    html += '  <tr>\n';
+    r.forEach(c => html += `    <td>${c}</td>\n`);
+    html += '  </tr>\n';
+    }
+    skip++
+  });
+
+  html += '</table>';
+  return html;
+}
+
+function textToHtml(text){
+  if(!text) return '';
+  text = text.replace(/\n>/g,"\n\t>")
+  text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  text = text.replace(/```(\w+)?\n([\s\S]*?)\n```/gs, function(match, lang, code) {
+  text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    lang = (lang || 'text').trim();
+    code = code.trim();
+    return `\n<div id='code_space' dir='ltr'><h3>${escapeHtml(lang)}</h3><pre>${escapeHtml(code)}</pre></div>`;
+  });
+  text = text.replace(/\n---\n/g,"\n<hr>\n")
+      const matches = [...text.matchAll(/((?:^\|.*\n?)+)/gm)];
+    for (let i = 0; i < matches.length; i++) {
+      //console.log(matches[i][0])
+      text = text.replace(matches[i][0], (match) => mdTableToHTML(match))
+      //console.log(matches.length)
+    }
+  const paras = text.split(/\n{1,}/g).map(p => {
+    if(/^##\s+(.+)/.test(p)){
+      return `<h2>${p.replace(/^##\s+/, '')}</h2>`;
+    } else if(/^#\s+(.+)/.test(p)){
+      return `<h1>${p.replace(/^#\s+/, '')}</h1>`;
+    }
+    p = p.replace(/\t>(.*)/, "<h2>$1</h2>");
+    p = p.replace(/^###\s+(.*)/, "<h2>$1</h2>");
+    p = p.replace(/^##\s+(.*)/, '<h2>$1</h2>');
+    p = p.replace(/^#\s+(.*)/, '<h1>$1</h1>');
+    p = p.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    p = p.replace(/_(.*?)_/g, '<i>$1</i>');
+    p = p.replace(/`(.*?)`/g, function(match, codeContent) {
+    return `<code id='code_name' dir='ltr'>${escapeHtml(codeContent)}</code>`;
+    });
+    p = p.replace(/\*(.*)/,'<h3>• $1</h3>')
+    p = p.replace(/\n---\n/,"\n<hr>\n")
+    p = p.replace(/\n---\n/g, '\n<hr>\n');
+    p = p.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+    return `<p>${p}</p>`;
+  });
+
+  return paras.join('\n').replace("<p></p>\n<p></p>\n","<p></p>");
+}
+
+
+    function downloadDoc(filename, htmlContent){//note need to be change (pdf,docx)
+      const blob = new Blob([htmlContent], {type: 'application/msword'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 10000);
+    }
+
+    downloadBtn.addEventListener('click', ()=>{
+      const title = titleEl.value.trim() || 'document';
+      const text = contentEl.value;
+      const bodyHtml = textToHtml(text);
+      const fullHtml = makeHtmlDocument(title, bodyHtml);
+      const safeFilename = title.replace(/[^a-z0-9\- _\.]/ig,'').trim() || 'document';
+      downloadDoc(safeFilename + '.doc', fullHtml);
+    });
+
+previewBtn.addEventListener('click', ()=>{
+  const title = titleEl.value.trim() || 'Preview';
+  const text = contentEl.value;
+  const bodyHtml = textToHtml(text);
+  const fullHtml = makeHtmlDocument(title, bodyHtml);
+
+  const w = window.open();
+  w.document.open();
+  w.document.write(fullHtml);
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+  body {
+    font-family: system-ui, sans-serif;
+    background: #fafafa;
+    color: #111;
+    padding: 2rem;
+    line-height: 1.7;
+    transition: all 0.3s;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background: #121212;
+      color: #e0e0e0;
+    }
+    #code_space {
+      background: #2c2c2c;
+      border: 1px solid #444;
+    }
+    table {
+      background: #1e1e1e;
+    }
+    thead {
+      background: #2c2c2c;
+    }
+    tbody tr:nth-child(even) {
+      background: #222;
+    }
+  }
+    `;
+    w.document.head.appendChild(style);
+
+  w.document.close();
+});
+
+
+    clearBtn.addEventListener('click', ()=>{
+      if(confirm('Clear title and content?')){
+        titleEl.value = '';
+        contentEl.value = '';
+      }
+    });
+  </script>
+</body>
+</html>
